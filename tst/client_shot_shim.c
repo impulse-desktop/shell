@@ -241,13 +241,18 @@ int main(int argc, char** argv) {
             action, env_or("IMWAY_SHOT_FORMAT", ""), env_or("IMWAY_SHOT_LOSSLESS", ""),
             env_or("IMWAY_SHOT_QUALITY", ""), env_or("IMWAY_SHOT_COLOR", ""), env_or("IMGUI_SCALE", ""));
     fclose(report);
-    printf("shim: %s %ux%u action %s\n", dmabuf ? "dma-buf" : "memfd", w, h, action);
+    snprintf(path, sizeof(path), "%s/%s.shim", dir, name);
+    printf("shim: %s %ux%u action %s, receipt %s\n", dmabuf ? "dma-buf" : "memfd", w, h, action, path);
 
     if (!strcmp(action, "save")) {
+        free(file);
         return 0;
     }
 
-    if (wl_boot()) return 1;
+    if (wl_boot()) {
+        free(file);
+        return 1;
+    }
 
     if (dmabuf_fd >= 0) {
         struct wl_registry* registry = wl_display_get_registry(wl_dpy);
@@ -276,11 +281,13 @@ int main(int argc, char** argv) {
 
     /* Escape leaves as the editor does: with nothing saved */
     wlk_watch_key = 1;
-    while (wl_display_dispatch(wl_dpy) != -1) {
-        if (wlk_watch_hits) {
-            printf("shim: escape\n");
-            return 0;
-        }
+    int escaped = 0;
+    while (!escaped && wl_display_dispatch(wl_dpy) != -1) {
+        escaped = wlk_watch_hits;
     }
+    if (escaped) {
+        printf("shim: escape\n");
+    }
+    free(file);
     return 0;
 }
