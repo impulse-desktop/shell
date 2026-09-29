@@ -784,6 +784,7 @@ void ControlImpl::dumpState(StringView outPath) {
     // the millisecond clock as the bell and the OSD read it
     out << "clock ms="_sv << comp->chaos->clockMs(nowMsec()) << "\n"_sv;
     out << "frames done="_sv << comp->scene->framesDone << "\n"_sv;
+    out << "screenshot busy="_sv << (int)comp->renderer->screenshotBusy() << "\n"_sv;
 
     if (comp->kmsIntercept) {
         // delivered page-flip events: the fake device's ground truth for

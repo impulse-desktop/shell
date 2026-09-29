@@ -582,6 +582,7 @@ namespace {
         u64 colorIntermediateBytes() override;
         bool readPixel(int x, int y, u8& r, u8& g, u8& b) override;
         void captureScreenshot() override;
+        bool screenshotBusy() override;
         void beginScreenshot();
         void syncScanoutTargets();
     };
@@ -4463,11 +4464,15 @@ bool RendererImpl::readPixel(int x, int y, u8& r, u8& g, u8& b) {
 }
 
 void RendererImpl::captureScreenshot() {
-    if (shotRequested || shotCapture->busy()) {
+    if (screenshotBusy()) {
         return;
     }
 
     shotCapture->request();
+}
+
+bool RendererImpl::screenshotBusy() {
+    return shotRequested || shotCapture->busy();
 }
 
 void RendererImpl::beginScreenshot() {

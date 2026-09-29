@@ -31,6 +31,9 @@ struct Renderer {
 
     // the interactive screenshot (PrintScreen): capture + viewer handoff
     virtual void captureScreenshot() = 0;
+    // whether a capture is still under way (read back, or handed off and
+    // not yet retired by the display): a chord meanwhile is ignored
+    virtual bool screenshotBusy() = 0;
 
     // one-pixel eyedropper into the last composed frame
     virtual bool readPixel(int x, int y, u8& r, u8& g, u8& b) = 0;

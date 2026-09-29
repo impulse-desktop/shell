@@ -19,7 +19,9 @@ out="$XDG_RUNTIME_DIR/crash.log"
 pid=$!
 
 up() { grep -q "socket imway-crash," "$out"; }
-await 300 up || { echo "the second compositor did not come up"; cat "$out"; kill -9 "$pid" 2>/dev/null || true; exit 1; }
+# within the runner's minute, so a compositor that never comes up is
+# reported with its log rather than cut off silently
+await 200 up || { echo "the second compositor did not come up"; cat "$out"; kill -9 "$pid" 2>/dev/null || true; exit 1; }
 first=$(head -1 "$out")
 
 kill -SEGV "$pid"

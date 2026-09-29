@@ -18,7 +18,11 @@ told() { # <receipt> <key=value>...: every setting reached the editor
     done
 }
 
+# a capture handed off stays busy until the display retires the scanout it
+# gave away: the next chord waits for that, as a person's next press would
+free() { [[ "$(dump_field '^screenshot' busy)" == 0 ]]; }
 capture() { # <name> <format ordinal> <lossless> <quality>
+    await 100 free || { echo "the last capture never finished"; dump_state; exit 1; }
     ctl "set applications.screenshot_name $1"
     ctl "set applications.screenshot_format $2"
     ctl "set applications.screenshot_lossless $3"
