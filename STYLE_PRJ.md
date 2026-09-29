@@ -4,8 +4,7 @@ Per-project settings that the shared [STYLE.md](STYLE.md) delegates here.
 
 - **Macro prefix.** None reserved. Wayland protocol macros (`ZWP_`, `WP_`,
   `XDG_`, ...) keep their external spelling.
-- **Namespace.** Imway is a program: no project namespace. The vendored
-  `plt` platform library keeps its `plt` namespace.
+- **Namespace.** Imway is a program: no project namespace.
 - **Formatter.** `./dev/style.py` formats every tracked C++ source.
 
 ## Deviations

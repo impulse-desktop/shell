@@ -242,6 +242,16 @@ def run(imway: str, scenario: str, client: str, meta: dict,
     input_dir = os.path.join(rt, "input")
     os.makedirs(input_dir, exist_ok=True)
 
+    # the screenshot editor is the suite's `im screenshot`, spawned as
+    # `imscreenshot` from PATH: its stand-in (tst/client_shot_shim.c)
+    # answers to that name here and reports what the compositor handed over
+    tests_bin = os.path.join(os.path.dirname(os.path.abspath(imway)), "tests")
+    shim_bin = os.path.join(rt, "bin")
+    os.makedirs(shim_bin, exist_ok=True)
+    os.symlink(os.path.join(tests_bin, "client_shot_shim"),
+               os.path.join(shim_bin, "imscreenshot"))
+    env["PATH"] = shim_bin + os.pathsep + env.get("PATH", "")
+
     # A coverage run points LLVM_PROFILE_FILE at a directory. Name this
     # scenario's profiles after it: pids are reused over a ten minute run,
     # and two processes sharing a name means one of them is lost.

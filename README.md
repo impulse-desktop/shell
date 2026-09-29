@@ -8,9 +8,11 @@
 
 A Wayland compositor and desktop in one process, drawn with a vendored
 ImGui on Vulkan. Windows, a dock, a menu bar, a launcher, notifications,
-a calendar, a wifi picker, a volume mixer, a lock screen and a screenshot
-tool are all part of the compositor; there is no shell to install next to
-it. It drives a display through KMS with atomic modesetting, dma-buf
+a calendar, a wifi picker, a volume mixer and a lock screen are all part
+of the compositor; there is no shell to install next to it. The screenshot
+editor it spawns on the Print key is `im screenshot` from the
+[suite](https://github.com/impulse-desktop/suite), found on PATH as
+`imscreenshot`. It drives a display through KMS with atomic modesetting, dma-buf
 scanout and HDR.
 
 Single-threaded by design, with one background lane for blocking work.
@@ -56,8 +58,8 @@ devices, autostart commands and the rest are edited in the settings dialog
 from the launcher and live for the session.
 
 The lock screen authenticates through PAM, service `login` by default.
-Screenshots are saved as PNG or JPEG XL and cropped in a viewer that is
-the same binary: `imway screenshot PATH` opens the crop tool on an image.
+Screenshots go to the suite's editor, `imscreenshot`, which crops them and
+saves PNG or JPEG XL; a KMS session hands it the scanout buffer itself.
 
 Wifi is driven through iwd or NetworkManager, audio volume through sndio or
 PulseAudio (which covers PipeWire), whichever is running. Notifications,
@@ -106,5 +108,5 @@ Releases](https://github.com/impulse-desktop/shell/releases).
 
 ## License
 
-MIT, see [LICENSE](LICENSE). The vendored `ext/imgui`, `ext/libstd` and
-`ext/plt` are MIT as well.
+MIT, see [LICENSE](LICENSE). The vendored `ext/imgui` and `ext/libstd`
+are MIT as well.

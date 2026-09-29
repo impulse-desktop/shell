@@ -2,7 +2,7 @@
 # memfd, its header or its first chunk of pixels fails, as fd exhaustion
 # or a memory-limited memfd would make it): the capture is dropped with a
 # log line and no viewer, and the capture is free again, so the next Print
-# saves as usual. Sourced by headless_reg_shot_file_fault_*.sh.
+# reaches the editor as usual. Sourced by headless_reg_shot_file_fault_*.sh.
 . "$(dirname "$0")/lib.sh"
 
 shots="$XDG_RUNTIME_DIR/shots"
@@ -18,8 +18,8 @@ await 100 in_log "imway: screenshot readback failed" || { echo "the unbuildable 
 
 ctl "set applications.screenshot_name kept"
 ctl "key 99 press"; ctl "key 99 release"
-await 200 test -s "$shots/kept.png" || { echo "the capture stayed busy after the failed file"; cat "$IMWAY_LOG"; exit 1; }
-[[ ! -e "$shots/lost.png" ]] || { echo "the failed file still produced a screenshot"; exit 1; }
+await 200 test -s "$shots/kept.shim" || { echo "the capture stayed busy after the failed file"; cat "$IMWAY_LOG"; exit 1; }
+[[ ! -e "$shots/lost.shim" ]] || { echo "the failed file still produced a screenshot"; exit 1; }
 
 expect_alive "compositor died on a screenshot file it could not build"
-echo "OK: a screenshot file that cannot be built is dropped and the next one saves"
+echo "OK: a screenshot file that cannot be built is dropped and the next one is handed over"

@@ -124,10 +124,6 @@ using namespace stl;
 //                     takes two: its access starts, then ends)
 //   gpu-wait=K        K waits the renderer cannot go on without pass, the
 //                     one after reports a lost device
-// the screenshot viewer, a process of its own with its own monkey:
-//   swapchain=K       K swapchain acquires and presents pass, the one after
-//                     reports the swapchain out of date
-//   swapchain-suboptimal=K  the same, reporting it suboptimal instead
 // the buses, each word arming one fault on calls to the named D-Bus member;
 // MEMBER@K lets K matching calls through first:
 //   dbus-message=M    the next message built for M fails to allocate
@@ -156,9 +152,6 @@ using namespace stl;
 //                     import fail with EMFILE
 //   host-alignment=N  the device wants imported host pointers aligned to N
 //                     bytes, a wl_shm pool's page-aligned mapping not enough
-// screenshot viewer: its encoders
-//   encoder-alloc=K   K encoder allocations pass, the one after fails as
-//                     without memory
 // the millisecond clock:
 //   clock-ms=V        the clock reads V at its first reading and runs on
 //                     from there: V just under 2^32 wraps it round to zero
@@ -265,9 +258,6 @@ namespace {
         int shotSubmitFaults = 0;
         int udmabufSyncSkip = -1;
         int gpuWaitSkip = -1;
-        // screenshot viewer
-        int swapchainSkip = -1;
-        VkResult swapchainFault = VK_SUCCESS;
         // buses
         BusRule busRules[8];
         int busSendBuffer = 0;
@@ -282,8 +272,6 @@ namespace {
         int udmabufExportFaults = 0;
         int udmabufDupFaults = 0;
         u64 hostAlignment = 0;
-        // screenshot viewer: its encoders
-        int encoderAllocSkip = -1;
         // the millisecond clock: the offset is fixed at the first reading
         bool clockSet = false;
         u32 clockStart = 0;
@@ -306,9 +294,9 @@ namespace {
         Vector<StringView> globalFaults;
         int formatTableSkip = -1;
         int atomicRequestSkip = -1;
-#if __has_include(<security/pam_appl.h>)
+    #if __has_include(<security/pam_appl.h>)
         pam_message rewritten{};
-#endif
+    #endif
 
         TestChaosMonkey(StringView script);
 
@@ -365,8 +353,6 @@ namespace {
         VkResult shotSubmit(VkResult pending) override;
         int udmabufSync(int result) override;
         VkResult gpuWait(VkResult result) override;
-        // screenshot viewer
-        VkResult swapchain(VkResult result) override;
         // buses
         DBusMessage* dbusMessage(DBusMessage* built) override;
         DBusMessage* dbusSend(DBusMessage* call) override;
@@ -381,8 +367,6 @@ namespace {
         int udmabufExport(int fd) override;
         int udmabufDup(int fd) override;
         u64 hostPointerAlignment(u64 alignment) override;
-        // screenshot viewer: its encoders
-        bool encoderAlloc(bool pending) override;
         // the millisecond clock
         u32 clockMs(u32 ms) override;
         // vulkan: the device and the renderer's objects outside setup
@@ -561,9 +545,6 @@ void TestChaosMonkey::armFault(StringView fault, StringView arg) {
         udmabufSyncSkip = (int)arg.stou();
     } else if (fault == "gpu-wait"_sv) {
         gpuWaitSkip = (int)arg.stou();
-    } else if (fault == "swapchain"_sv || fault == "swapchain-suboptimal"_sv) {
-        swapchainSkip = (int)arg.stou();
-        swapchainFault = fault == "swapchain"_sv ? VK_ERROR_OUT_OF_DATE_KHR : VK_SUBOPTIMAL_KHR;
     } else if (fault == "dbus-message"_sv) {
         // buses
         armBus(BusFault::message, arg);
@@ -602,9 +583,6 @@ void TestChaosMonkey::armFault(StringView fault, StringView arg) {
         udmabufDupFaults = (int)arg.stou();
     } else if (fault == "host-alignment"_sv) {
         hostAlignment = arg.stou();
-    } else if (fault == "encoder-alloc"_sv) {
-        // screenshot viewer: its encoders
-        encoderAllocSkip = (int)arg.stou();
     } else if (fault == "clock-ms"_sv) {
         // the millisecond clock
         clockSet = true;
@@ -618,7 +596,6 @@ void TestChaosMonkey::armFault(StringView fault, StringView arg) {
         iconTextureSkip = (int)arg.stou();
     } else if (fault == "shot-readback"_sv) {
         shotReadbackSkip = (int)arg.stou();
-
     } else if (fault == "control-open"_sv) {
         // the resources a subsystem checks for
         controlOpenFaults = (int)arg.stou();
@@ -758,14 +735,14 @@ const pam_message* TestChaosMonkey::pamMessage(const pam_message* message) {
         return nullptr;
     }
 
-#if __has_include(<security/pam_appl.h>)
+    #if __has_include(<security/pam_appl.h>)
     rewritten = *message;
     rewritten.msg_style = messageStyle;
 
     return &rewritten;
-#else
+    #else
     return message;
-#endif
+    #endif
 }
 
 pam_response* TestChaosMonkey::pamResponses(pam_response* responses) {
@@ -1077,15 +1054,6 @@ VkResult TestChaosMonkey::gpuWait(VkResult result) {
     return VK_ERROR_DEVICE_LOST;
 }
 
-// screenshot viewer
-VkResult TestChaosMonkey::swapchain(VkResult result) {
-    if (!failsOnce(swapchainSkip)) {
-        return result;
-    }
-
-    return swapchainFault;
-}
-
 bool TestChaosMonkey::deviceExtension(const char* name, bool offered) {
     for (StringView hidden : hiddenExtensions) {
         if (hidden == StringView(name)) {
@@ -1209,15 +1177,6 @@ int TestChaosMonkey::udmabufDup(int fd) {
 
 u64 TestChaosMonkey::hostPointerAlignment(u64 alignment) {
     return hostAlignment ? hostAlignment : alignment;
-}
-
-// screenshot viewer: its encoders
-bool TestChaosMonkey::encoderAlloc(bool pending) {
-    if (!failsOnce(encoderAllocSkip)) {
-        return pending;
-    }
-
-    return false;
 }
 
 // the millisecond clock: unsigned arithmetic wraps the shifted clock
@@ -1464,8 +1423,6 @@ namespace {
         VkResult shotSubmit(VkResult pending) override;
         int udmabufSync(int result) override;
         VkResult gpuWait(VkResult result) override;
-        // screenshot viewer
-        VkResult swapchain(VkResult result) override;
         // buses
         DBusMessage* dbusMessage(DBusMessage* built) override;
         DBusMessage* dbusSend(DBusMessage* call) override;
@@ -1480,8 +1437,6 @@ namespace {
         int udmabufExport(int fd) override;
         int udmabufDup(int fd) override;
         u64 hostPointerAlignment(u64 alignment) override;
-        // screenshot viewer: its encoders
-        bool encoderAlloc(bool pending) override;
         // the millisecond clock
         u32 clockMs(u32 ms) override;
         // vulkan: the device and the renderer's objects outside setup
@@ -1675,11 +1630,6 @@ VkResult IdleChaosMonkey::gpuWait(VkResult result) {
     return result;
 }
 
-// screenshot viewer
-VkResult IdleChaosMonkey::swapchain(VkResult result) {
-    return result;
-}
-
 bool IdleChaosMonkey::deviceExtension(const char*, bool offered) {
     return offered;
 }
@@ -1742,11 +1692,6 @@ int IdleChaosMonkey::udmabufDup(int fd) {
 
 u64 IdleChaosMonkey::hostPointerAlignment(u64 alignment) {
     return alignment;
-}
-
-// screenshot viewer: its encoders
-bool IdleChaosMonkey::encoderAlloc(bool pending) {
-    return pending;
 }
 
 // the millisecond clock

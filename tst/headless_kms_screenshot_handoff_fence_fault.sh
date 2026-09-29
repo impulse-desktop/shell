@@ -46,7 +46,7 @@ echo "dma-buf fds: before=$before after=$after"
 
 ctl "set applications.screenshot_name kept"
 ctl "key 99 press"; ctl "key 99 release"
-await 200 test -s "$shots/kept.png" || { echo "the next Print did not save"; cat "$IMWAY_LOG"; exit 1; }
+await 200 test -s "$shots/kept.shim" || { echo "the next Print did not save"; cat "$IMWAY_LOG"; exit 1; }
 
 expect_alive "compositor died on a failed handoff fence"
 echo "OK: a failed handoff fence closes the exported buffer and the next Print saves"

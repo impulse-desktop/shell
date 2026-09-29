@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Print pressed again while the first screenshot is still being taken: the
 # second press is ignored rather than starting a capture over the busy
-# one, so exactly one viewer is spawned; once it has finished, Print works
+# one, so exactly one editor is spawned; once it has finished, Print works
 # again.
 set -euo pipefail
 . "$(dirname "$0")/lib.sh"
@@ -23,7 +23,7 @@ exited() {
 # both presses in one write: the second reaches the compositor while the
 # first capture waits for its frame
 printf 'key 99 press\nkey 99 release\nkey 99 press\nkey 99 release\n' >&3
-await 200 test -s "$shots/first.png" || { echo "the first capture was not saved"; cat "$IMWAY_LOG"; exit 1; }
+await 200 test -s "$shots/first.shim" || { echo "the first capture was not saved"; cat "$IMWAY_LOG"; exit 1; }
 first_done() { [[ "$(exited)" -ge 1 ]]; }
 await 100 first_done || { echo "the viewer did not finish"; cat "$IMWAY_LOG"; exit 1; }
 sleep 0.5 # a second capture, had one started, would have spawned by now
@@ -31,7 +31,7 @@ sleep 0.5 # a second capture, had one started, would have spawned by now
 
 ctl "set applications.screenshot_name second"
 ctl "key 99 press"; ctl "key 99 release"
-await 200 test -s "$shots/second.png" || { echo "Print did not work after the busy capture"; cat "$IMWAY_LOG"; exit 1; }
+await 200 test -s "$shots/second.shim" || { echo "Print did not work after the busy capture"; cat "$IMWAY_LOG"; exit 1; }
 
 expect_alive "compositor died on a double Print"
 echo "OK: Print while a capture is busy is ignored, and works again after"

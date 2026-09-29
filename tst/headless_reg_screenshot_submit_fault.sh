@@ -3,7 +3,7 @@
 # The queue refuses the copy submit of a screenshot readback (a display
 # that cannot import the GPU's buffers scans out dumb ones, with nothing to
 # hand off): the refusal is reported, the next frame submits the capture
-# again and the file is saved.
+# again and it reaches the editor.
 set -euo pipefail
 . "$(dirname "$0")/lib.sh"
 
@@ -21,8 +21,8 @@ retried() {
     [[ $(grep -c "imway: screenshot readback" "$IMWAY_LOG") -ge 2 ]]
 }
 await 100 retried || { echo "the refused capture was not submitted again"; cat "$IMWAY_LOG"; exit 1; }
-await 200 test -s "$shots/refused.png" || { echo "the retried capture was not saved"; cat "$IMWAY_LOG"; exit 1; }
-[[ "$(head -c 4 "$shots/refused.png" | od -An -tx1 | tr -d ' \n')" == 89504e47 ]] || { echo "refused.png is not a PNG"; exit 1; }
+await 200 test -s "$shots/refused.shim" || { echo "the retried capture never reached the editor"; cat "$IMWAY_LOG"; exit 1; }
+grep -q '^source=memfd$' "$shots/refused.shim" || { echo "the retry did not reach the editor as a readback:"; cat "$shots/refused.shim"; exit 1; }
 
 expect_alive "compositor died on a refused screenshot submit"
-echo "OK: a refused readback submit is reported, retried and saved"
+echo "OK: a refused readback submit is reported, retried and handed over"

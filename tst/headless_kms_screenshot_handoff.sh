@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 # imway-env: IMWAY_CHILD_LOG=./viewer.log
 # The screenshot chord on a KMS session hands the scanout buffer itself to
-# the viewer instead of reading pixels back: the compositor swaps in a
-# replacement scanout and the old one travels to the viewer as a dma-buf.
-# The viewer finds the exporting GPU by its deviceUUID, which a software
-# device without a drm node has as well, imports the buffer and encodes the
-# PNG from it. Only a device without the import extensions may refuse, and
-# must say so; the compositor keeps running either way.
+# the editor instead of reading pixels back: the compositor swaps in a
+# replacement scanout and the old one travels to the editor as a dma-buf,
+# described by its size, layout and the exporting GPU's deviceUUID. The
+# editor's stand-in (tst/client_shot_shim.c) reports what it was handed;
+# the compositor keeps running after.
 set -euo pipefail
 . "$(dirname "$0")/lib.sh"
 
@@ -38,32 +37,15 @@ await 100 in_log "screenshot handoff of the scanout buffer" || {
     exit 1
 }
 
-saved() {
-    [[ -s "$shots/handoff.png" ]]
-}
-viewer_spoke() {
-    [[ -s "$XDG_RUNTIME_DIR/viewer.log" ]]
-}
-
-for _ in $(seq 1 200); do
-    saved && break
-    viewer_spoke && break
-    sleep 0.1
-done
-
-if saved; then
-    [[ "$(head -c 4 "$shots/handoff.png" | od -An -tx1 | tr -d ' \n')" == 89504e47 ]] || {
-        echo "handoff.png is not a PNG"; exit 1; }
-    await 100 in_log "exited with status 0" || { echo "the viewer did not exit cleanly"; cat "$IMWAY_LOG"; exit 1; }
-else
-    viewer_spoke || { echo "the viewer neither encoded nor reported anything"; cat "$IMWAY_LOG"; exit 1; }
-    grep -Eq "vulkan lacks VK_(KHR_external_memory_fd|EXT_external_memory_dma_buf|EXT_image_drm_format_modifier)" "$XDG_RUNTIME_DIR/viewer.log" || {
-        echo "the viewer failed to import the shared buffer:"
-        cat "$XDG_RUNTIME_DIR/viewer.log"
-        exit 1
-    }
-    echo "note: this device has no dma-buf image import, the viewer reported it"
-fi
+receipt="$shots/handoff.shim"
+await 200 test -s "$receipt" || { echo "the handoff never reached the editor"; cat "$IMWAY_LOG" "$XDG_RUNTIME_DIR/viewer.log" 2>/dev/null; exit 1; }
+grep -q '^source=dmabuf$' "$receipt" || { echo "the editor was not handed the scanout buffer:"; cat "$receipt"; exit 1; }
+grep -q '^width=1280$' "$receipt" && grep -q '^height=800$' "$receipt" || { echo "the handed-off buffer is not the output's size:"; cat "$receipt"; exit 1; }
+grep -Eq '^uuid=[0-9a-f]{32}$' "$receipt" || { echo "no exporting device uuid came with the handoff:"; cat "$receipt"; exit 1; }
+grep -q '^fd-name=/dmabuf:' "$receipt" || { echo "the fd handed over is not a dma-buf:"; cat "$receipt"; exit 1; }
+size=$(sed -n 's/^size=//p' "$receipt"); fd_size=$(sed -n 's/^fd-size=//p' "$receipt")
+[[ "$size" -gt 0 && "$fd_size" == "$size" ]] || { echo "the dma-buf holds $fd_size bytes, the handoff announced $size"; cat "$receipt"; exit 1; }
+await 100 in_log "exited with status 0" || { echo "the editor did not exit cleanly"; cat "$IMWAY_LOG"; exit 1; }
 
 # the session keeps flipping on its replacement scanout: with the client
 # gone the desktop is composited again, round the whole scanout ring, into
@@ -94,4 +76,4 @@ assert lit > len(d) // (3 * 17) // 4, "the desktop composited after the handoff 
 PY
 
 expect_alive "compositor died handing off a scanout"
-echo "OK: the scanout buffer itself reaches the viewer and encodes"
+echo "OK: the scanout buffer itself reaches the editor, described whole"

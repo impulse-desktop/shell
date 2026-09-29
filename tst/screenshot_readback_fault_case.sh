@@ -18,8 +18,8 @@ retried() {
     [[ $(grep -c "imway: screenshot readback$" "$IMWAY_LOG") -ge 2 ]]
 }
 await 100 retried || { echo "the capture was not submitted again"; cat "$IMWAY_LOG"; exit 1; }
-await 200 test -s "$shots/readback.png" || { echo "the retried capture was not saved"; cat "$IMWAY_LOG"; exit 1; }
-[[ "$(head -c 4 "$shots/readback.png" | od -An -tx1 | tr -d ' \n')" == 89504e47 ]] || { echo "readback.png is not a PNG"; exit 1; }
+await 200 test -s "$shots/readback.shim" || { echo "the retried capture never reached the editor"; cat "$IMWAY_LOG"; exit 1; }
+grep -q '^source=memfd$' "$shots/readback.shim" || { echo "the retry did not reach the editor as a readback:"; cat "$shots/readback.shim"; exit 1; }
 
 expect_alive "compositor died on a failed screenshot readback buffer"
-echo "OK: a failed readback buffer is reported, built again and the capture saved"
+echo "OK: a failed readback buffer is reported, built again and the capture handed over"

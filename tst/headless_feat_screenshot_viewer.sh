@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # The screenshot chord end to end: readback, the buffer fd over the spawn
-# socket, the viewer re-exec ("imway screenshot fd:3") mapping as a client of
-# this same compositor and actually showing the captured image.
+# socket, the editor (`imscreenshot fd:3` from PATH, its stand-in here)
+# mapping as a client of this same compositor and showing the captured
+# image.
 set -euo pipefail
 . "$(dirname "$0")/lib.sh"
 
@@ -13,7 +14,7 @@ ctl "key 99 press"
 ctl "key 99 release"
 
 viewer_up() {
-    [[ -n "$(dump_field 'title=imway screenshot' id)" ]]
+    [[ -n "$(dump_field 'title=im screenshot' id)" ]]
 }
 
 await 150 viewer_up || {
@@ -52,4 +53,4 @@ await 100 magenta_shown || {
 }
 
 expect_alive "compositor died during the screenshot pipeline"
-echo "OK: the screenshot viewer maps and shows the capture"
+echo "OK: the screenshot editor maps and shows the capture it was handed"

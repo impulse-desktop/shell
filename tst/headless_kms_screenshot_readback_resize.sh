@@ -3,7 +3,8 @@
 # The screenshot capture keeps its readback buffer between captures, sized
 # for the mode it was made at. After the output moves to a bigger mode the
 # next capture must replace it and save the whole new frame, not a
-# 1280x800 corner of it (or past the end of the old buffer).
+# 1280x800 corner of it (or past the end of the old buffer); the editor's
+# stand-in reports the size it is handed.
 set -euo pipefail
 . "$(dirname "$0")/lib.sh"
 
@@ -16,15 +17,15 @@ ctl "set applications.screenshot_format 1" # png
 ctl "set applications.screenshot_action 1" # save, no window
 await 100 in_log "control: set applications.screenshot_action" || { echo "settings are not reachable"; exit 1; }
 
-png_size() { # <file>: "WxH"
-    python3 -c 'import struct,sys; d=open(sys.argv[1],"rb").read(24); print("%dx%d" % struct.unpack(">II", d[16:24]))' "$1"
+capture_size() { # <receipt>: "WxH"
+    echo "$(sed -n 's/^width=//p' "$1")x$(sed -n 's/^height=//p' "$1")"
 }
 capture() { # <name> <expected WxH>
     ctl "set applications.screenshot_name $1"
     ctl "key 99 press"; ctl "key 99 release" # Print
-    await 200 test -s "$shots/$1.png" || { echo "$1 was not saved"; cat "$IMWAY_LOG"; exit 1; }
+    await 200 test -s "$shots/$1.shim" || { echo "$1 never reached the editor"; cat "$IMWAY_LOG"; exit 1; }
     local size
-    size=$(png_size "$shots/$1.png")
+    size=$(capture_size "$shots/$1.shim")
     [[ "$size" == "$2" ]] || { echo "$1 is $size, not $2"; exit 1; }
 }
 viewers_done() { # <count>

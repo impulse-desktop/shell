@@ -3,7 +3,7 @@
 # The queue refuses the copy submit of a screenshot handoff after the
 # scanout was exported for the viewer: the refusal is reported, the
 # exported dma-buf fd is closed rather than left open in the compositor,
-# the capture retries as a pixel readback and the file is saved. The session
+# the capture retries as a pixel readback and reaches the editor. The session
 # keeps flipping.
 set -euo pipefail
 . "$(dirname "$0")/lib.sh"
@@ -30,8 +30,8 @@ ctl "key 99 press"; ctl "key 99 release" # Print
 await 100 in_log "screenshot handoff of the scanout buffer" || { echo "no handoff"; cat "$IMWAY_LOG"; exit 1; }
 await 100 in_log "imway: screenshot submit failed (-2)" || { echo "the refused submit was not reported"; cat "$IMWAY_LOG"; exit 1; }
 await 100 in_log "imway: screenshot readback" || { echo "the capture did not retry as a readback"; cat "$IMWAY_LOG"; exit 1; }
-await 200 test -s "$shots/refused.png" || { echo "the retried capture was not saved"; cat "$IMWAY_LOG"; exit 1; }
-[[ "$(head -c 4 "$shots/refused.png" | od -An -tx1 | tr -d ' \n')" == 89504e47 ]] || { echo "refused.png is not a PNG"; exit 1; }
+await 200 test -s "$shots/refused.shim" || { echo "the retried capture never reached the editor"; cat "$IMWAY_LOG"; exit 1; }
+grep -q '^source=memfd$' "$shots/refused.shim" || { echo "the retry did not reach the editor as a readback:"; cat "$shots/refused.shim"; exit 1; }
 
 flips() { dump_field '^kms' flips; }
 f0=$(flips)

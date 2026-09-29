@@ -1,12 +1,11 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
-
-#include <std/sys/types.h>
 #include <std/str/view.h>
+#include <std/sys/types.h>
 
 #include <stddef.h>
 #include <sys/types.h>
+#include <vulkan/vulkan.h>
 
 namespace stl {
     class ObjPool;
@@ -170,10 +169,6 @@ struct ChaosMonkey {
     // teardown
     virtual VkResult gpuWait(VkResult result) = 0;
 
-    // screenshot viewer (imway screenshot, its own process and monkey)
-    // the result of acquiring a swapchain image or presenting one
-    virtual VkResult swapchain(VkResult result) = 0;
-
     // the buses (dbus_menu, status_notifier, wifi): a message a site has
     // just built, before it goes anywhere (a replacement takes over the one
     // it was handed); a call about to be sent, null to have the send fail
@@ -207,12 +202,6 @@ struct ChaosMonkey {
     virtual int udmabufDup(int fd) = 0;
     // device: the alignment the device wants of an imported host pointer
     virtual u64 hostPointerAlignment(u64 alignment) = 0;
-
-    // screenshot viewer: its encoders
-    // the outcome an encoder allocation is about to have (libpng's write
-    // and info structs, libjxl's encoder and frame settings), handed over
-    // before the call: false stands for it failing, and nothing is made
-    virtual bool encoderAlloc(bool pending) = 0;
 
     // the 32-bit millisecond clock (nowMsec) as the sites that stamp and age
     // things by it read it: the bell, the OSD, the stats sample

@@ -4,16 +4,16 @@
 #include "util.h"
 #include "color.h"
 #include "scene.h"
+#include "spawn.h"
 #include "output.h"
 #include "pooled.h"
 #include "composer.h"
+#include "ev_watch.h"
 #include "listener.h"
 #include "device_vk.h"
 #include "fence_poll.h"
 #include "offload_job.h"
 #include "chaos_monkey.h"
-#include "spawn.h"
-#include "ev_watch.h"
 
 #include <std/ios/sys.h>
 #include <std/str/view.h>
@@ -554,10 +554,11 @@ void ScreenshotCaptureImpl::ready() {
 }
 
 void ScreenshotCaptureImpl::spawn(int fd, const SharedScanout* image) {
-    // the buffer travels as an fd over the spawn socket and lands in the
-    // viewer as fd 3 — a /proc/pid/fd reopen would need write access and
-    // dies with ENXIO on dma-bufs anyway
-    StringView args[] = {"/proc/self/exe"_sv, "screenshot"_sv, "fd:3"_sv};
+    // The editor is the suite's `im screenshot`, found on PATH under its
+    // link's name. The buffer travels as an fd over the spawn socket and
+    // lands in it as fd 3 — a /proc/pid/fd reopen would need write access
+    // and dies with ENXIO on dma-bufs anyway
+    StringView args[] = {"imscreenshot"_sv, "fd:3"_sv};
     Buffer display;
 
     {
@@ -654,7 +655,7 @@ void ScreenshotCaptureImpl::spawn(int fd, const SharedScanout* image) {
     SpawnSpec spec;
 
     spec.args = args;
-    spec.argCount = 3;
+    spec.argCount = 2;
     spec.env = env;
     spec.envCount = image ? 10 : 9;
 

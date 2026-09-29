@@ -1,7 +1,7 @@
 # Sourced by the headless_kms_screenshot_*_fail scenarios: the screenshot
 # chord on a zero-copy KMS session whose scanout handoff breaks at the step
 # the scenario's IMWAY_CHAOS=scanout=K names. The capture falls back to a
-# pixel readback, the file is written anyway and the session keeps flipping
+# pixel readback, which reaches the editor anyway, and the session keeps flipping
 # on its own swapchain.
 
 in_log "scanout swapchain: 2 images" || { echo "no zero-copy swapchain, nothing to hand off"; cat "$IMWAY_LOG"; exit 1; }
@@ -19,9 +19,9 @@ ctl "key 99 press"; ctl "key 99 release" # Print
 await 100 in_log "imway: screenshot readback" || { echo "the capture did not fall back to a readback"; cat "$IMWAY_LOG"; exit 1; }
 ! in_log "screenshot handoff of the scanout buffer" || { echo "a broken handoff was still taken"; cat "$IMWAY_LOG"; exit 1; }
 
-saved() { [[ -s "$shots/fallback.png" ]]; }
-await 200 saved || { echo "the readback was not saved"; cat "$IMWAY_LOG"; exit 1; }
-[[ "$(head -c 4 "$shots/fallback.png" | od -An -tx1 | tr -d ' \n')" == 89504e47 ]] || { echo "fallback.png is not a PNG"; exit 1; }
+saved() { [[ -s "$shots/fallback.shim" ]]; }
+await 200 saved || { echo "the readback never reached the editor"; cat "$IMWAY_LOG"; exit 1; }
+grep -q '^source=memfd$' "$shots/fallback.shim" || { echo "the fallback did not reach the editor as a readback:"; cat "$shots/fallback.shim"; exit 1; }
 
 flips() { dump_field '^kms' flips; }
 f0=$(flips)
