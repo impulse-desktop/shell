@@ -29,6 +29,7 @@ shot() { # <exits before>: one Print, its editor gone
     ctl "key 99 press"; ctl "key 99 release" # Print
     await 200 done_saving || {
         echo "the handoff never reached the editor"
+        ls -la "$shots" 2>/dev/null
         cat "$IMWAY_LOG" "$XDG_RUNTIME_DIR/viewer.log" 2>/dev/null
         exit 1
     }
