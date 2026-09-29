@@ -1,8 +1,8 @@
 # imway
 
-[![CI](https://github.com/pg83/imway/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/pg83/imway/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/pg83/imway/branch/main/graph/badge.svg)](https://app.codecov.io/gh/pg83/imway/tree/main)
-[![release](https://img.shields.io/github/v/release/pg83/imway?label=release&color=blue)](https://github.com/pg83/imway/releases/latest)
+[![CI](https://github.com/impulse-desktop/shell/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/impulse-desktop/shell/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/impulse-desktop/shell/branch/main/graph/badge.svg)](https://app.codecov.io/gh/impulse-desktop/shell/tree/main)
+[![release](https://img.shields.io/github/v/release/impulse-desktop/shell?label=release&color=blue)](https://github.com/impulse-desktop/shell/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![C++23](https://img.shields.io/badge/C%2B%2B-23-informational)](STYLE.md)
 
@@ -102,7 +102,7 @@ Format sources with `./dev/style.py`.
 ## Releases
 
 Releases are numbered tags: `1`, `2`, ... on [GitHub
-Releases](https://github.com/pg83/imway/releases).
+Releases](https://github.com/impulse-desktop/shell/releases).
 
 ## License
 

@@ -154,7 +154,7 @@
 
           meta = {
             description = "Wayland compositor and desktop shell";
-            homepage = "https://github.com/pg83/imway";
+            homepage = "https://github.com/impulse-desktop/shell";
             license = lib.licenses.mit;
             mainProgram = "imway";
             platforms = lib.platforms.linux;
