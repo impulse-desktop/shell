@@ -1,4 +1,4 @@
-# imway
+# ImWay
 
 [![CI](https://github.com/impulse-desktop/shell/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/impulse-desktop/shell/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/impulse-desktop/shell/branch/main/graph/badge.svg)](https://app.codecov.io/gh/impulse-desktop/shell/tree/main)
